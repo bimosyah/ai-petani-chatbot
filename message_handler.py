@@ -3,12 +3,21 @@ import json
 import httpx
 from dotenv import load_dotenv
 
-from rag.search_docs import search_context
+from rag.search_docs_topic import search_context
 
 load_dotenv()
 
 API_KEY = os.getenv("API_KEY_GROQ")
 MODEL = os.getenv("LLM_MODEL")
+
+def detect_topic(question: str) -> str:
+    q = question.lower()
+    if "jagung" in q:
+        return "jagung"
+    elif "padi" in q:
+        return "padi"
+    else:
+        return "unknown"
 
 # Load static Q&A cache
 with open("cache/static_cache.json") as f:
@@ -17,21 +26,32 @@ with open("cache/static_cache.json") as f:
 def answer_question(user_question: str) -> str:
     normalized = user_question.strip().lower()
 
-    # Cek static cache dulu
+    # 1. Cek dari static cache dulu
     for key in static_cache:
         if key in normalized:
             return static_cache[key]
-    # Ambil konteks dari PDF jagung
-    context = search_context(user_question)
 
+    # 2. Deteksi topik pertanyaan
+    topic = detect_topic(user_question)
+    if topic == "unknown":
+        return "Maaf, chatbot ini hanya mendukung topik **jagung** dan **padi** untuk saat ini."
+
+    # 3. Ambil konteks dari PDF topik yang sesuai
+    context = search_context(user_question, topic=topic)
+
+    # 4. Jika konteks gagal ditemukan (misal error karena vector DB belum dibuat)
+    if context.startswith("Topik") or context.startswith("Vector"):
+        return context
+
+    # 5. Buat prompt dan kirim ke LLM
     prompt = (
-        "Gunakan informasi berikut untuk menjawab pertanyaan petani.\n\n"
+        f"Gunakan informasi berikut dari dokumen topik **{topic}** untuk menjawab pertanyaan petani.\n\n"
         f"{context}\n\n"
         f"Pertanyaan: {user_question}\n\n"
         "Jawaban:"
     )
 
-    # Kirim prompt ke LLM
+    # LLM call (seperti sebelumnya)
     headers = {
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
