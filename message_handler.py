@@ -26,6 +26,10 @@ with open("cache/static_cache.json") as f:
 def answer_question(user_question: str) -> str:
     normalized = user_question.strip().lower()
 
+    greetings = ["halo", "hai", "assalamualaikum", "selamat pagi", "selamat siang"]
+    if any(greet in normalized for greet in greetings):
+        return "Halo! 👋 Saya chatbot AI pertanian. Saya bisa bantu soal **padi** dan **jagung**. Silakan tanya ya!"
+
     # 1. Cek dari static cache dulu
     for key in static_cache:
         if key in normalized:
@@ -34,7 +38,12 @@ def answer_question(user_question: str) -> str:
     # 2. Deteksi topik pertanyaan
     topic = detect_topic(user_question)
     if topic == "unknown":
-        return "Maaf, chatbot ini hanya mendukung topik **jagung** dan **padi** untuk saat ini."
+        return (
+            "Saat ini saya baru bisa bantu untuk topik **padi** dan **jagung** ya 🌾🌽.\n"
+            "Coba contoh pertanyaan seperti:\n"
+            "- *Apa saja hama jagung?*\n"
+            "- *Kapan panen padi?*"
+        )
 
     # 3. Ambil konteks dari PDF topik yang sesuai
     context = search_context(user_question, topic=topic)
