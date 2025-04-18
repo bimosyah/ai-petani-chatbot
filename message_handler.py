@@ -5,6 +5,7 @@ import httpx
 from dotenv import load_dotenv
 
 from rag.search_docs_topic import search_context
+from sheet_logger import log_to_sheet
 
 load_dotenv()
 
@@ -34,10 +35,14 @@ def is_disease_question(question: str) -> bool:
 def get_disease_images(topic: str) -> list:
     disease_images = {
         "padi": [
-            {"nama": "Busuk Pelepah", "url": "https://s3-ap-southeast-1.amazonaws.com/maxxi-staging/image/user/AVATAR_4094a5c0-f162-4458-90db-e810ec05b193"},
-            {"nama": "Blas", "url": "https://s3-ap-southeast-1.amazonaws.com/maxxi-staging/image/user/AVATAR_adfbedf5-bc38-4f5f-9ffe-2f5f545c7a1b"},
-            {"nama": "Hawar Daun", "url": "https://s3-ap-southeast-1.amazonaws.com/maxxi-staging/image/user/AVATAR_41080547-d8b3-42dd-8088-3bab8aedd0e8"},
-            {"nama": "Bercak Coklat", "url": "https://s3-ap-southeast-1.amazonaws.com/maxxi-staging/image/user/AVATAR_6ddaf0a5-8813-4066-af4c-f0d207cc4462"},
+            {"nama": "Busuk Pelepah",
+             "url": "https://s3-ap-southeast-1.amazonaws.com/maxxi-staging/image/user/AVATAR_4094a5c0-f162-4458-90db-e810ec05b193"},
+            {"nama": "Blas",
+             "url": "https://s3-ap-southeast-1.amazonaws.com/maxxi-staging/image/user/AVATAR_adfbedf5-bc38-4f5f-9ffe-2f5f545c7a1b"},
+            {"nama": "Hawar Daun",
+             "url": "https://s3-ap-southeast-1.amazonaws.com/maxxi-staging/image/user/AVATAR_41080547-d8b3-42dd-8088-3bab8aedd0e8"},
+            {"nama": "Bercak Coklat",
+             "url": "https://s3-ap-southeast-1.amazonaws.com/maxxi-staging/image/user/AVATAR_6ddaf0a5-8813-4066-af4c-f0d207cc4462"},
         ],
         "jagung": [
             {"nama": "Bulai",
@@ -122,6 +127,13 @@ def answer_question(user_question: str) -> str:
                 images = get_disease_images(topic)
                 image_lines = "\n".join([f"- {img['nama']}: {img['url']}" for img in images])
                 answer += "\n\n🖼️ Berikut gambar penyakit terkait:\n" + image_lines
+
+            log_to_sheet(
+                question=user_question,
+                answer=answer,
+                topic=topic,
+                source="rag" if "context" in locals() else "cache"
+            )
 
             return answer
 
